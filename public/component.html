@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<!-- saved from url=(0076)https://components.mywebsitebuilder.com/extern/maps-app/poi-express-143.html -->
+<html><head lang="en"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>POI Api</title>
+    
+    <style>
+        body {
+            margin: 0;
+        }
+        .googlemaps-wrapper {
+            display: block;
+            background: transparent;
+            border: none;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .gm-info-window-title,
+        .gm-info-window-description {
+            color: black;
+            min-width: 240px;
+        }
+
+        .gm-info-window-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 6px;
+            padding: 8px 6px 0;
+        }
+
+        .gm-info-window-description {
+            font-size: 1em;
+            padding: 0 6px 8px;
+        }
+    </style>
+    <script type="text/javascript">
+        (function () {
+            var maps;
+            var infoWindows = []
+            var contentControl = {
+                data: {}
+            }
+            var html = '<div data-type="googlemaps" data-prop="global.address" class="googlemaps-wrapper"></div>'
+            document.write(html);
+            var defaultData = {
+                zoom: 15,
+                mapType: 'roadmap',
+                grayscale: false
+            }
+            var defaultStyle = [{
+                featureType: 'administrative.country',
+                elementType: 'geometry.fill',
+                stylers: [{
+                    saturation: '-35'
+                }]
+            }]
+            var grayScaleStyle = [
+                {
+                    featureTypefeatureType: 'administrative',
+                    elementTypeelementType: 'all',
+                    stylersstylers: [
+                    {
+                        saturation: '-100'
+                    }
+                    ]
+                },
+                {
+                    featureType: 'administrative.province',
+                    elementType: 'all',
+                    stylers: [
+                    {
+                        visibility: 'off'
+                    }
+                    ]
+                },
+                {
+                    featureType: 'landscape',
+                    elementType: 'all',
+                    stylers: [
+                    {
+                        saturation: -100
+                    },
+                    {
+                        lightness: 65
+                    },
+                    {
+                        visibility: 'on'
+                    }
+                    ]
+                },
+                {
+                    featureType: 'poi',
+                    elementType: 'all',
+                    stylers: [
+                    {
+                        saturation: -100
+                    },
+                    {
+                        lightness: '50'
+                    },
+                    {
+                        visibility: 'simplified'
+                    }
+                    ]
+                },
+                {
+                    featureType: 'road',
+                    elementType: 'all',
+                    stylers: [
+                    {
+                        saturation: '-100'
+                    }
+                    ]
+                },
+                {
+                    featureType: 'road.highway',
+                    elementType: 'all',
+                    stylers: [
+                    {
+                        visibility: 'simplified'
+                    }
+                    ]
+                },
+                {
+                    featureType: 'road.arterial',
+                    elementType: 'all',
+                    stylers: [
+                    {
+                        lightness: '30'
+                    }
+                    ]
+                },
+                {
+                    featureType: 'road.local',
+                    elementType: 'all',
+                    stylers: [
+                    {
+                        lightness: '40'
+                    }
+                    ]
+                },
+                {
+                    featureType: 'transit',
+                    elementType: 'all',
+                    stylers: [
+                    {
+                        saturation: -100
+                    },
+                    {
+                        visibility: 'simplified'
+                    }
+                    ]
+                },
+                {
+                    featureType: 'water',
+                    elementType: 'geometry',
+                    stylers: [
+                    {
+                        hue: '#ffff00'
+                    },
+                    {
+                        lightness: -25
+                    },
+                    {
+                        saturation: -97
+                    }
+                    ]
+                },
+                {
+                    featureType: 'water',
+                    elementType: 'labels',
+                    stylers: [
+                    {
+                        lightness: -25
+                    },
+                    {
+                        saturation: -100
+                    }
+                    ]
+                }
+            ]
+            const mapIconUrl = 'https://storage.googleapis.com/wzreponsiveeditor-static-latest/images/maps'
+
+            const markers = {
+                default: `${mapIconUrl}/default_red.svg`,
+                default_green: `${mapIconUrl}/default_green.svg`,
+                default_blue: `${mapIconUrl}/default_blue.svg`,
+                default_orange: `${mapIconUrl}/default_orange.svg`,
+                arts: `${mapIconUrl}/arts.svg`,
+                bars: `${mapIconUrl}/bars.svg`,
+                camera: `${mapIconUrl}/camera.svg`,
+                coffee: `${mapIconUrl}/coffee.svg`,
+                convenience: `${mapIconUrl}/convenience.svg`,
+                dining: `${mapIconUrl}/dining.svg`,
+                flag: `${mapIconUrl}/flag.svg`,
+                home: `${mapIconUrl}/home.svg`,
+                salon: `${mapIconUrl}/salon.svg`,
+                shopping: `${mapIconUrl}/shopping.svg`
+            }
+
+
+            var renderMarkers = function(result) {
+                result.forEach((location, i) => {
+                    const icon = {
+                        url: location.hasOwnProperty('marker')
+                        ? markers[location.marker]
+                        : markers['default'],
+                        anchor: new maps.Point(16, 32),
+                        scaledSize: new maps.Size(32, 32)
+                    }
+
+                    const marker = new maps.Marker({
+                        position: location.coordinate,
+                        map: contentControl.data.map,
+                        icon: icon
+                    })
+
+                    const infoWindowTitle = (location.title || '')
+                        .toString()
+                        .trim()
+                    const infoWindowDescription = (
+                        location.description || ''
+                    )
+                        .toString()
+                        .trim()
+
+                    if (infoWindowTitle !== '' || infoWindowDescription !== '') {
+                        const infoWindowContent = `<div class="gm-info-window-title">${infoWindowTitle}</div><div class="gm-info-window-description">${infoWindowDescription}</div>`
+                        const infoWindow = new maps.InfoWindow({
+                        content: infoWindowContent
+                        })
+
+                        infoWindows.push(infoWindow)
+
+                        marker.addListener('click', () => {
+                        infoWindows.forEach(infoWindow => infoWindow.close())
+                        infoWindow.open(contentControl.data.map, marker)
+                        })
+                    }
+
+                    contentControl.data.bounds.extend(
+                        new maps.LatLng(marker.position.lat(), marker.position.lng())
+                    )
+              })
+
+              if (result.length > 0) {
+                contentControl.data.map.addListener('bounds_changed', () => {
+                  if (result.length === 1) {
+                    if (contentControl.data.map.getZoom() > 20) {
+                      contentControl.data.map.setZoom(
+                        mapData.zoomLevel || defaultData.zoom
+                      )
+                    }
+                  }
+                })
+                contentControl.data.map.fitBounds(contentControl.data.bounds)
+                contentControl.data.map.panToBounds(contentControl.data.bounds)
+
+                if (result.length > 1) {
+                  contentControl.data.minZoomLevel = Math.min(
+                    contentControl.data.map.getZoom()
+                  )
+                } else {
+                  if (mapData.zoomLevel) {
+                    contentControl.data.map.setZoom(
+                      Math.min(
+                        mapData.zoomLevel,
+                        contentControl.data.minZoomLevel || 20
+                      )
+                    )
+                  } else {
+                    contentControl.data.map.setZoom(defaultData.zoom)
+                  }
+                }
+              }
+            }
+
+            var changeSettings = function(settings) {
+                switch (settings.property) {
+                    case 'zoomLevel':
+                        const zoomLevel = contentControl.data.minZoomLevel
+                            ? Math.min(settings.value, contentControl.data.minZoomLevel)
+                            : settings.value
+                        contentControl.data.map.setZoom(zoomLevel)
+                    break
+                    case 'mapType':
+                        contentControl.data.map.setMapTypeId(settings.value.toLowerCase())
+                    break
+                    case 'grayscale':
+                        contentControl.data.map.setOptions({
+                            styles: settings.value === true ? grayScaleStyle : defaultStyle
+                        })
+                    break
+                    case 'zoomControl':
+                        contentControl.data.map.setOptions({ zoomControl: settings.value === true })
+                    break
+                    default:
+                        return false
+                }
+            }
+
+            var mapData = {}
+            var mapInitialized = false
+            window.addEventListener("message", function(event) {
+                try {
+                    const parsedData = JSON.parse(event.data)
+                    if (parsedData.mapData) {
+                        mapData = parsedData.mapData
+                    }
+                    if (parsedData.settings) {
+                        changeSettings(parsedData.settings)
+                    }
+                    if (!mapInitialized) {
+                        mapInitialized = true
+                        initializeMap()
+                    }
+                }
+                catch (e) {
+                    console.error(e);
+                }
+            });
+
+            let lastZoomLevel = -1
+            var notifyZoomChange = zoomLevel => {
+                lastZoomLevel = zoomLevel
+                window.parent.postMessage(
+                    JSON.stringify({
+                        id: mapData.id,
+                        zoomLevel: zoomLevel
+                    }),
+                    '*'
+                )
+            }
+
+            window.mapLoaded = function() {
+                maps = window.google.maps
+                var element = document.querySelector('*[data-type="googlemaps"]')
+                contentControl.data.bounds = new maps.LatLngBounds()
+
+                contentControl.data.map = new maps.Map(element, {
+                    zoom: mapData.zoomLevel || defaultData.zoom,
+                    gestureHandling: 'cooperative',
+                    draggable: mapData.isRuntimeSite,
+                    draggableCursor: mapData.isRuntimeSite ? null : 'default',
+                    mapTypeId: (mapData.mapType || defaultData.mapType).toLowerCase(),
+                    styles: mapData.grayscale ? grayScaleStyle : defaultStyle,
+                    zoomControl: mapData.zoomControl,
+                    mapTypeControl: false,
+                    scaleControl: false,
+                    streetViewControl: mapData.isRuntimeSite,
+                    rotateControl: true,
+                    fullscreenControl: false
+                })
+                if (!mapData.isRuntimeSite) {
+                    contentControl.data.map.addListener('zoom_changed', () =>
+                        notifyZoomChange(contentControl.data.map.getZoom())
+                    )
+                }
+                renderMarkers(mapData.locations)
+            }
+
+            var initializeMap = function() {
+                const script = document.createElement('script');
+                var apiKey = 'AIzaSyCp8JSJbYfsBFQho2tgpMeG0Cuv6YoxDtc';
+                script.src = 'https://maps.googleapis.com/maps/api/js?key=' + apiKey + '&libraries=places&callback=mapLoaded&v=3.35';
+                script.async = true;
+                script.defer = true;
+                document.body.append(script);
+            }
+
+        }) ();
+    </script></head><body><div data-type="googlemaps" data-prop="global.address" class="googlemaps-wrapper"></div>
+
+
+
+</body></html>
